@@ -1,1 +1,3 @@
-# laravel58_docker_mysql
+docker-compose up
+php artisan migrate
+
