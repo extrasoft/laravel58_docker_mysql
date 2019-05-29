@@ -74,6 +74,7 @@ services:
     image: redis
     networks:
       - backend
+    restart: always
     expose:
       - 6379
 secrets:
