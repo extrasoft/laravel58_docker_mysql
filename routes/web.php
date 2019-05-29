@@ -1,0 +1,22 @@
+<?php
+use Illuminate\Support\Facades\Redis;
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+Route::get('/', function() {
+    Redis::set('folder:index', '1234567890');
+    $secret = Redis::get('folder:index');
+    // dd($secret);
+
+    // $users = \App\User::all();
+    // dd($users);
+    return view('welcome',compact('secret'));
+});

@@ -1,0 +1,90 @@
+version: '3.1'
+services:
+  composer:
+    image: composer
+    volumes:
+      - .:/app 
+    command: [
+      'bash', '-c',
+      '
+        composer install &&
+        if [[ -f /app/.env ]]; then echo ".env file already exists";
+        else cp /app/.env.example /app/.env && php artisan key:generate; fi
+      '
+    ]
+    restart: always
+  node:
+    image: node:alpine
+    volumes:
+      - .:/app
+    command: "node install && node run watch-pool"
+    
+  nginx:
+    image: nginx
+    volumes:
+      - .dockerconfig/nginx/conf.d:/etc/nginx/conf.d
+      - .:/var/www/html
+    depends_on:
+      - php
+      - mariadb
+    networks:
+      - frontend
+    restart: always
+    ports:
+      - 8000:80
+
+  php:
+    build: .dockerconfig/php
+    volumes:
+      - .dockerconfig/php/conf.d:/user/local/etc/php/conf.d
+      - .:/var/www/html
+    depends_on:
+      - composer
+    networks:
+      - frontend
+      - backend
+    restart: always
+    expose:
+      - 9000
+
+  mariadb:
+    image: mariadb
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD_FILE: /run/secrets/db_root_password
+      MYSQL_DATABASE_FILE: /run/secrets/db_database
+      MYSQL_USER_FILE: /run/secrets/db_user
+      MYSQL_PASSWORD_FILE: /run/secrets/db_password
+      # MYSQL_ROOT_PASSWORD: "super-secret-password"
+      # MYSQL_DATABASE: "blog"
+      # MYSQL_USER: "team"
+      # MYSQL_PASSWORD: "secret"
+    secrets:
+      - db_root_password
+      - db_database
+      - db_user
+      - db_password
+    networks:
+      - backend
+    expose:
+      - 3306
+    restart: always
+  cacheserver:
+    image: redis
+    networks:
+      - backend
+    expose:
+      - 6379
+secrets:
+  db_root_password:
+    file: .dockerconfig/secrets/db-root-password
+  db_database:
+    file: .dockerconfig/secrets/db-database
+  db_user:
+    file: .dockerconfig/secrets/db-user
+  db_password:
+    file: .dockerconfig/secrets/db-password
+networks:
+  frontend:
+  backend:
